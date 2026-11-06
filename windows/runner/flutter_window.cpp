@@ -127,6 +127,22 @@ void FlutterWindow::RegisterIntentChannel() {
     } else if (call.method_name().compare("exitFullscreen") == 0) {
       FullscreenUtils::ExitNativeFullscreen(GetHandle());
       result->Success();
+    } else if (call.method_name().compare("openWithPotPlayer") == 0) {
+      const auto* arguments = std::get_if<flutter::EncodableMap>(call.arguments());
+      if (!arguments) {
+        result->Error("InvalidArguments", "Arguments are not a map");
+        return;
+      }
+      const auto url_it = arguments->find(flutter::EncodableValue("url"));
+      const auto* url = url_it == arguments->end()
+                            ? nullptr
+                            : std::get_if<std::string>(&url_it->second);
+      if (!url) {
+        result->Error("InvalidArguments", "Missing or invalid 'url' argument");
+        return;
+      }
+      result->Success(flutter::EncodableValue(
+          ExternalPlayerUtils::OpenWithPotPlayer(*url)));
     } else if (call.method_name().compare("openWithMime") == 0) {
       const auto* arguments = std::get_if<flutter::EncodableMap>(call.arguments());
       if (arguments) {
