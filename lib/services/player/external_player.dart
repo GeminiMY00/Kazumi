@@ -8,10 +8,42 @@ enum LinuxExternalPlayerResult {
   failed,
 }
 
+enum PotPlayerResult { launched, notInstalled, unsupportedSource, failed }
+
 class ExternalPlayer {
   ExternalPlayer._();
 
   static const _platform = MethodChannel('com.predidit.kazumi/intent');
+
+  static Future<PotPlayerResult> launchPotPlayer(
+      String url, String referer) async {
+    // PotPlayer cannot inherit the built-in player's request headers or local
+    // proxy/session state. Only hand off a directly playable network URL.
+    final uri = Uri.tryParse(url);
+    if (referer.isNotEmpty ||
+        uri == null ||
+        !const ['http', 'https'].contains(uri.scheme) ||
+        uri.host.isEmpty ||
+        RegExp(r'[\x00-\x20\x7f"\\]').hasMatch(url)) {
+      return PotPlayerResult.unsupportedSource;
+    }
+    try {
+      final result = await _platform.invokeMethod<String>(
+        'openWithPotPlayer',
+        <String, String>{'url': url},
+      );
+      return switch (result) {
+        'launched' => PotPlayerResult.launched,
+        'notInstalled' => PotPlayerResult.notInstalled,
+        'unsupportedSource' => PotPlayerResult.unsupportedSource,
+        _ => PotPlayerResult.failed,
+      };
+    } on PlatformException {
+      return PotPlayerResult.failed;
+    } on MissingPluginException {
+      return PotPlayerResult.failed;
+    }
+  }
 
   static Future<bool> launchUrlWithMime(String url, String mimeType) async {
     try {

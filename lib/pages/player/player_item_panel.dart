@@ -780,7 +780,29 @@ class _PlayerItemPanelState extends State<PlayerItemPanel> {
                       ),
                     )),
             controls: compact ? const SizedBox.shrink() : _wideControls,
-            fullscreen: _buildFullscreenButton(compact),
+            fullscreen: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (Platform.isWindows)
+                  IconButton(
+                    color: Colors.white,
+                    icon: const Icon(Icons.play_circle_outline),
+                    tooltip: '使用 PotPlayer 播放当前选集',
+                    onPressed: () async {
+                      // Resolution can still hold the previous episode's URL.
+                      if (videoPageController.loading ||
+                          videoPageController.playingEpisode == null ||
+                          videoPageController.playingEpisode !=
+                              videoPageController.selectedEpisode) {
+                        KazumiDialog.showToast(message: '当前选集尚未就绪，请稍后重试');
+                        return;
+                      }
+                      await playerController.externalPlayback.launchPotPlayer();
+                    },
+                  ),
+                _buildFullscreenButton(compact),
+              ],
+            ),
           ),
         ),
       );

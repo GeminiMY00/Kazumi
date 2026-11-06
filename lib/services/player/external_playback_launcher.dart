@@ -12,6 +12,26 @@ class ExternalPlaybackLauncher {
     required this.referer,
   });
 
+  bool _launchingPotPlayer = false;
+
+  Future<void> launchPotPlayer() async {
+    if (!Platform.isWindows || _launchingPotPlayer) return;
+    _launchingPotPlayer = true;
+    try {
+      final result = await ExternalPlayer.launchPotPlayer(videoUrl(), referer());
+      KazumiDialog.showToast(message: switch (result) {
+        PotPlayerResult.launched => '已请求 PotPlayer 播放；若无法播放，请继续使用内置播放器',
+        PotPlayerResult.notInstalled =>
+          '未找到 PotPlayer，请安装到默认目录或注册 Windows App Paths 后重试',
+        PotPlayerResult.unsupportedSource =>
+          '当前视频地址尚未就绪或需要特殊请求头/本地播放，请使用内置播放器',
+        PotPlayerResult.failed => '启动 PotPlayer 失败，请检查安装或继续使用内置播放器',
+      });
+    } finally {
+      _launchingPotPlayer = false;
+    }
+  }
+
   Future<void> launch() async {
     final currentVideoUrl = videoUrl();
     final currentReferer = referer();

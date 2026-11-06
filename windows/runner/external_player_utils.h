@@ -10,12 +10,15 @@
 #define EXTERNAL_PLAYER_UTILS_H_
 
 #include <cstdint>
+#include <string>
 
 #include <Windows.h>
 
 class ExternalPlayerUtils {
  public:
   static void OpenWithPlayer(const char* url);
+  // Returns launched, notInstalled, unsupportedSource, or failed.
+  static std::string OpenWithPotPlayer(const std::string& url);
 };
 
 #endif  // EXTERNAL_PLAYER_UTILS_H_
